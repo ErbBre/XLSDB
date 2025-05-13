@@ -102,6 +102,7 @@ row_title = None
 workbook  = None
 extension_user = None
 URL_DATABASE = None
+f_columns = None
 # Lista de palabras reservadas de SQL
 palabras_reservadas = [
     "select", "insert", "update", "delete", "from", "where", "join", "into", "drop", "alter", "create",
@@ -170,7 +171,7 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                         sheet_now = workbook[sheet_browser]
                         # Leer la primera fila (títulos)
                         #row_title_sheet = [cell.value for cell in sheet_now[1]]
-                        row_title_sheet = [cell.value for cell in sheet[1] if cell.value and str(cell.value).strip() != ""]
+                        row_title_sheet = [cell.value for cell in sheet_now[1] if cell.value and str(cell.value).strip() != ""]
                         nrows = sheet_now.max_row
                         if not(nrows > 1): 
                             raise ValueError(f"La Hoja '{sheet_browser}' esta vacia")
@@ -208,7 +209,7 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                             data_type = "TEXT"
                         elif  type(data_column) == int or type(data_column) == float:
                             data_type = "REAL"
-                        print("ERROR:",column_muestra)
+                        
                         estructura_sql+= f"{row_title_sheet[column_muestra]} {data_type}"
                         estructura_sql_columns+= f"{row_title_sheet[column_muestra]}"
                         estructura_sql_columns_signo+= "?"
@@ -385,9 +386,8 @@ def open_file_excel(file_path):
     global row_muestra
     global f_columns
     global extension_user
-    f_columns = Frame(FR_content_frame)
-    f_columns.grid(row=4, column=0, columnspan=2)
 
+    
     extension = os.path.splitext(file_path)[1].lower()
 
     hojas = []
@@ -585,7 +585,8 @@ Label(FR_input, text="Select sheet :").grid(row=0, column=0, sticky='e')
 Label(FR_input, text="All of the sheets :").grid(row=0, column=2, sticky='e')
 Label(FR_input, text="Name as table :").grid(row=2, column=0, sticky='e')
 Label(FR_input, text="Suffix :").grid(row=2, column=2, sticky='e')
-
+f_columns = Frame(FR_content_frame)
+f_columns.grid(row=4, column=0, columnspan=2)
 def al_seleccionar_hoja(event):
         BTN_CHARGE_DATA.config(state="normal")
         for widget in f_columns.winfo_children():
