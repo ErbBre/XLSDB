@@ -169,12 +169,14 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                     if extension_user == '.xlsx':
                         sheet_now = workbook[sheet_browser]
                         # Leer la primera fila (títulos)
-                        row_title_sheet = [cell.value for cell in sheet_now[1]]
+                        #row_title_sheet = [cell.value for cell in sheet_now[1]]
+                        row_title_sheet = [cell.value for cell in sheet[1] if cell.value and str(cell.value).strip() != ""]
                         nrows = sheet_now.max_row
                         if not(nrows > 1): 
                             raise ValueError(f"La Hoja '{sheet_browser}' esta vacia")
                         else:
-                            row_muestra_sheet = [cell.value for cell in sheet_now[2]]
+                            lista_muestra = [cell.value for cell in sheet_now[2]]
+                            row_muestra_sheet = lista_muestra[:len(row_title_sheet)]
 
                     elif extension_user == '.xls':
                         sheet_now = workbook.sheet_by_name(sheet_browser)
@@ -184,7 +186,8 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                             # print(f"La Hoja {sheet_browser} esta vacia")
                             raise ValueError(f"La Hoja '{sheet_browser}' esta vacia")
                         else:
-                            row_muestra_sheet = sheet_now.row_values(1)
+                            lista_muestra = sheet_now.row_values(1)
+                            row_muestra_sheet = lista_muestra[:len(row_title_sheet)]
                     else:
                         raise ValueError("Formato de archivo no soportado: usa .xls o .xlsx")
                     
@@ -205,6 +208,7 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                             data_type = "TEXT"
                         elif  type(data_column) == int or type(data_column) == float:
                             data_type = "REAL"
+                        print("ERROR:",column_muestra)
                         estructura_sql+= f"{row_title_sheet[column_muestra]} {data_type}"
                         estructura_sql_columns+= f"{row_title_sheet[column_muestra]}"
                         estructura_sql_columns_signo+= "?"
@@ -231,7 +235,7 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                     if extension_user == '.xlsx':
                         # Iterar desde la segunda fila (saltando encabezados)
                         for row in first_sheet.iter_rows(min_row=2, values_only=True):
-                            data_insert.append(list(row))
+                            data_insert.append(list(row[:len(row_title_sheet)]))
                     elif extension_user == '.xls':
                         for row_idx in range(1, first_sheet.nrows):  # Salta la fila de encabezados
                             fila = first_sheet.row_values(row_idx)
@@ -275,10 +279,12 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                 if extension_user == '.xlsx':
                     sheet = workbook[hoja]
                     # Leer la primera fila (títulos)
-                    row_title = [cell.value for cell in sheet[1]]
+                    #row_title = [cell.value for cell in sheet[1]]
+                    row_title = [cell.value for cell in sheet[1] if cell.value and str(cell.value).strip() != ""]
                 elif extension_user == '.xls':
                     hojas = workbook.sheet_by_name(hoja)
-                    row_title = hojas.row_values(0)
+                    #row_title = hojas.row_values(0)
+                    row_title = [value for value in hojas.row_values(0) if value and str(value).strip() != ""]
                 else:
                     raise ValueError("Formato de archivo no soportado: usa .xls o .xlsx")
                 
@@ -329,10 +335,12 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
             if extension_user == '.xlsx':
                 sheet = workbook[sheet_name]
                 # Leer la primera fila (títulos)
-                row_title = [cell.value for cell in sheet[1]]
+                #row_title = [cell.value for cell in sheet[1]]
+                row_title = [cell.value for cell in sheet[1] if cell.value and str(cell.value).strip() != ""]
             elif extension_user == '.xls':
                 hojas = workbook.sheet_by_name(sheet_name)
-                row_title = hojas.row_values(0)
+                #row_title = hojas.row_values(0)
+                row_title = [value for value in hojas.row_values(0) if value and str(value).strip() != ""]
             else:
                 raise ValueError("Formato de archivo no soportado: usa .xls o .xlsx")
             print(f"Columnas de la hoja {sheet_name}",row_title)
@@ -397,7 +405,8 @@ def open_file_excel(file_path):
         if hojas:
             list_sheets.set(hojas[0])
             ws = workbook[hojas[0]]
-            row_title = [cell.value for cell in ws[1]]
+            #row_title = [cell.value for cell in ws[1]]
+            row_title = [cell.value for cell in ws[1] if cell.value and str(cell.value).strip() != ""]
             row_muestra = [cell.value for cell in ws[2]]
 
     elif extension == '.xls':   
@@ -415,6 +424,7 @@ def open_file_excel(file_path):
             ws = workbook.sheet_by_name(tabs[0])
             row_title = ws.row_values(0)
             row_muestra = ws.row_values(1)
+            print("MUESTRA: ",row_muestra)
 
     else:
         raise ValueError("Formato de archivo no soportado: usa .xls o .xlsx")
@@ -457,7 +467,10 @@ def get_database_info(tree):
     for item in tree.get_children():
         tree.delete(item)
     # Conectar a la base de datos
-    conn = sqlite3.connect("DATA/data_main.db")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(base_dir, "DATA", "data_main.db")
+    conn = sqlite3.connect(db_path)
+    #conn = sqlite3.connect("XLSDB/DATA/data_main.db")
     cursor = conn.cursor()
 
     # Ejecutar la consulta para obtener las tablas
@@ -584,10 +597,12 @@ def al_seleccionar_hoja(event):
         if extension_user == '.xlsx':
             sheet = workbook[seleccion]
             # Leer la primera fila (títulos)
-            first_line = [cell.value for cell in sheet[1]]
+            #first_line = [cell.value for cell in sheet[1]]
+            first_line = [cell.value for cell in sheet[1] if cell.value and str(cell.value).strip() != ""]
         elif extension_user == '.xls':
             hojas = workbook.sheet_by_name(seleccion)
-            first_line = hojas.row_values(0)
+            #first_line = hojas.row_values(0)
+            first_line = [value for value in hojas.row_values(0) if value and str(value).strip() != ""]
         else:
             raise ValueError("Formato de archivo no soportado: usa .xls o .xlsx")
         
@@ -664,11 +679,11 @@ checkbutton.grid(row=0, column=3, sticky='w')
 
 
 
-BTN_CHARGE_DATA=Button(FR_content_frame, text="Data load",bg="lightgreen",fg="black", command=lambda: save_data(name_path_file, table_name.get(), list_sheets.get(),var.get(),sufijo_name.get()))
-BTN_CHARGE_DATA.grid(row=5, column=0, sticky="e")
+BTN_CHARGE_DATA=Button(FR_input, text="Data load",bg="lightgreen",fg="black", command=lambda: save_data(name_path_file, table_name.get(), list_sheets.get(),var.get(),sufijo_name.get()))
+BTN_CHARGE_DATA.grid(row=5, column=0,columnspan=2, sticky="e")
 
-BTN_REFRESH=Button(FR_content_frame, text="Refresh", bg="lightblue", command=lambda: refrescar())
-BTN_REFRESH.grid(row=5, column=1,sticky="w")
+BTN_REFRESH=Button(FR_input, text="Refresh", bg="lightblue", command=lambda: refrescar())
+BTN_REFRESH.grid(row=5, column=2,columnspan=2,sticky="w")
 
 F_database = LabelFrame(F_main,text="Database")
 F_database.pack(side=RIGHT,fill=BOTH)
