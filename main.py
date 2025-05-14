@@ -102,11 +102,7 @@ row_title = None
 workbook  = None
 extension_user = None
 URL_DATABASE = None
-<<<<<<< HEAD
 # f_columns = None
-=======
-f_columns = None
->>>>>>> b066932385a5cf54097ee6ffd0be70e643d1fed3
 # Lista de palabras reservadas de SQL
 palabras_reservadas = [
     "select", "insert", "update", "delete", "from", "where", "join", "into", "drop", "alter", "create",
@@ -391,7 +387,6 @@ def open_file_excel(file_path):
     global f_columns
     global extension_user
 
-    
     extension = os.path.splitext(file_path)[1].lower()
 
     hojas = []
@@ -590,7 +585,6 @@ Label(FR_input, text="Select sheet :").grid(row=0, column=0, sticky='e')
 Label(FR_input, text="All of the sheets :").grid(row=0, column=2, sticky='e')
 Label(FR_input, text="Name as table :").grid(row=2, column=0, sticky='e')
 Label(FR_input, text="Suffix :").grid(row=2, column=2, sticky='e')
-<<<<<<< HEAD
 
 # === Canvas + Scrollbar en el contenedor principal ===
 wrapper = Frame(F_filter)
@@ -611,10 +605,6 @@ canvas.create_window((0, 0), window=f_columns, anchor="n")
 def actualizar_scroll(event):
     canvas.configure(scrollregion=canvas.bbox("all"))
 f_columns.bind("<Configure>", actualizar_scroll)
-=======
-f_columns = Frame(FR_content_frame)
-f_columns.grid(row=4, column=0, columnspan=2)
->>>>>>> b066932385a5cf54097ee6ffd0be70e643d1fed3
 def al_seleccionar_hoja(event):
         BTN_CHARGE_DATA.config(state="normal")
         for widget in f_columns.winfo_children():
