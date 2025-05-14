@@ -102,6 +102,7 @@ row_title = None
 workbook  = None
 extension_user = None
 URL_DATABASE = None
+# f_columns = None
 # Lista de palabras reservadas de SQL
 palabras_reservadas = [
     "select", "insert", "update", "delete", "from", "where", "join", "into", "drop", "alter", "create",
@@ -169,12 +170,14 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                     if extension_user == '.xlsx':
                         sheet_now = workbook[sheet_browser]
                         # Leer la primera fila (títulos)
-                        row_title_sheet = [cell.value for cell in sheet_now[1]]
+                        #row_title_sheet = [cell.value for cell in sheet_now[1]]
+                        row_title_sheet = [cell.value for cell in sheet_now[1] if cell.value and str(cell.value).strip() != ""]
                         nrows = sheet_now.max_row
                         if not(nrows > 1): 
                             raise ValueError(f"La Hoja '{sheet_browser}' esta vacia")
                         else:
-                            row_muestra_sheet = [cell.value for cell in sheet_now[2]]
+                            lista_muestra = [cell.value for cell in sheet_now[2]]
+                            row_muestra_sheet = lista_muestra[:len(row_title_sheet)]
 
                     elif extension_user == '.xls':
                         sheet_now = workbook.sheet_by_name(sheet_browser)
@@ -184,7 +187,8 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                             # print(f"La Hoja {sheet_browser} esta vacia")
                             raise ValueError(f"La Hoja '{sheet_browser}' esta vacia")
                         else:
-                            row_muestra_sheet = sheet_now.row_values(1)
+                            lista_muestra = sheet_now.row_values(1)
+                            row_muestra_sheet = lista_muestra[:len(row_title_sheet)]
                     else:
                         raise ValueError("Formato de archivo no soportado: usa .xls o .xlsx")
                     
@@ -205,6 +209,7 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                             data_type = "TEXT"
                         elif  type(data_column) == int or type(data_column) == float:
                             data_type = "REAL"
+                        
                         estructura_sql+= f"{row_title_sheet[column_muestra]} {data_type}"
                         estructura_sql_columns+= f"{row_title_sheet[column_muestra]}"
                         estructura_sql_columns_signo+= "?"
@@ -231,7 +236,7 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                     if extension_user == '.xlsx':
                         # Iterar desde la segunda fila (saltando encabezados)
                         for row in first_sheet.iter_rows(min_row=2, values_only=True):
-                            data_insert.append(list(row))
+                            data_insert.append(list(row[:len(row_title_sheet)]))
                     elif extension_user == '.xls':
                         for row_idx in range(1, first_sheet.nrows):  # Salta la fila de encabezados
                             fila = first_sheet.row_values(row_idx)
@@ -275,10 +280,12 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
                 if extension_user == '.xlsx':
                     sheet = workbook[hoja]
                     # Leer la primera fila (títulos)
-                    row_title = [cell.value for cell in sheet[1]]
+                    #row_title = [cell.value for cell in sheet[1]]
+                    row_title = [cell.value for cell in sheet[1] if cell.value and str(cell.value).strip() != ""]
                 elif extension_user == '.xls':
                     hojas = workbook.sheet_by_name(hoja)
-                    row_title = hojas.row_values(0)
+                    #row_title = hojas.row_values(0)
+                    row_title = [value for value in hojas.row_values(0) if value and str(value).strip() != ""]
                 else:
                     raise ValueError("Formato de archivo no soportado: usa .xls o .xlsx")
                 
@@ -329,10 +336,12 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
             if extension_user == '.xlsx':
                 sheet = workbook[sheet_name]
                 # Leer la primera fila (títulos)
-                row_title = [cell.value for cell in sheet[1]]
+                #row_title = [cell.value for cell in sheet[1]]
+                row_title = [cell.value for cell in sheet[1] if cell.value and str(cell.value).strip() != ""]
             elif extension_user == '.xls':
                 hojas = workbook.sheet_by_name(sheet_name)
-                row_title = hojas.row_values(0)
+                #row_title = hojas.row_values(0)
+                row_title = [value for value in hojas.row_values(0) if value and str(value).strip() != ""]
             else:
                 raise ValueError("Formato de archivo no soportado: usa .xls o .xlsx")
             print(f"Columnas de la hoja {sheet_name}",row_title)
@@ -377,8 +386,6 @@ def open_file_excel(file_path):
     global row_muestra
     global f_columns
     global extension_user
-    f_columns = Frame(FR_content_frame)
-    f_columns.grid(row=4, column=0, columnspan=2)
 
     extension = os.path.splitext(file_path)[1].lower()
 
@@ -397,7 +404,8 @@ def open_file_excel(file_path):
         if hojas:
             list_sheets.set(hojas[0])
             ws = workbook[hojas[0]]
-            row_title = [cell.value for cell in ws[1]]
+            #row_title = [cell.value for cell in ws[1]]
+            row_title = [cell.value for cell in ws[1] if cell.value and str(cell.value).strip() != ""]
             row_muestra = [cell.value for cell in ws[2]]
 
     elif extension == '.xls':   
@@ -415,10 +423,14 @@ def open_file_excel(file_path):
             ws = workbook.sheet_by_name(tabs[0])
             row_title = ws.row_values(0)
             row_muestra = ws.row_values(1)
+            print("MUESTRA: ",row_muestra)
 
     else:
         raise ValueError("Formato de archivo no soportado: usa .xls o .xlsx")
 
+
+    for widget in f_columns.winfo_children():
+        widget.destroy()
     # Mostrar los títulos como etiquetas y entradas
     rows = 0
     columns = 1
@@ -457,7 +469,10 @@ def get_database_info(tree):
     for item in tree.get_children():
         tree.delete(item)
     # Conectar a la base de datos
-    conn = sqlite3.connect("DATA/data_main.db")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(base_dir, "DATA", "data_main.db")
+    conn = sqlite3.connect(db_path)
+    #conn = sqlite3.connect("XLSDB/DATA/data_main.db")
     cursor = conn.cursor()
 
     # Ejecutar la consulta para obtener las tablas
@@ -566,13 +581,30 @@ Button(F_filter, text="Open Excel file", bg="green",fg="white",font=("arial",12,
 FR_input = Frame(F_filter)
 FR_input.pack()
 
-FR_content_frame = Frame(F_filter)
-FR_content_frame.pack()
 Label(FR_input, text="Select sheet :").grid(row=0, column=0, sticky='e')
 Label(FR_input, text="All of the sheets :").grid(row=0, column=2, sticky='e')
 Label(FR_input, text="Name as table :").grid(row=2, column=0, sticky='e')
 Label(FR_input, text="Suffix :").grid(row=2, column=2, sticky='e')
 
+# === Canvas + Scrollbar en el contenedor principal ===
+wrapper = Frame(F_filter)
+wrapper.pack(fill="both", expand=True)
+
+canvas = tk.Canvas(wrapper, height=100)
+canvas.pack(side="top", fill="both", expand=True)
+
+scroll_x = tk.Scrollbar(wrapper, orient="horizontal", command=canvas.xview)
+scroll_x.pack(side="bottom", fill="x")
+canvas.configure(xscrollcommand=scroll_x.set)
+
+# === f_columns está completamente vacío y será usado como contenedor temporal ===
+f_columns = tk.Frame(canvas)  # <<<<<< ESTE es el frame vacío
+canvas.create_window((0, 0), window=f_columns, anchor="n")
+
+# === Ajustar el área de scroll cuando f_columns cambie ===
+def actualizar_scroll(event):
+    canvas.configure(scrollregion=canvas.bbox("all"))
+f_columns.bind("<Configure>", actualizar_scroll)
 def al_seleccionar_hoja(event):
         BTN_CHARGE_DATA.config(state="normal")
         for widget in f_columns.winfo_children():
@@ -584,10 +616,12 @@ def al_seleccionar_hoja(event):
         if extension_user == '.xlsx':
             sheet = workbook[seleccion]
             # Leer la primera fila (títulos)
-            first_line = [cell.value for cell in sheet[1]]
+            #first_line = [cell.value for cell in sheet[1]]
+            first_line = [cell.value for cell in sheet[1] if cell.value and str(cell.value).strip() != ""]
         elif extension_user == '.xls':
             hojas = workbook.sheet_by_name(seleccion)
-            first_line = hojas.row_values(0)
+            #first_line = hojas.row_values(0)
+            first_line = [value for value in hojas.row_values(0) if value and str(value).strip() != ""]
         else:
             raise ValueError("Formato de archivo no soportado: usa .xls o .xlsx")
         
@@ -607,7 +641,7 @@ def al_seleccionar_hoja(event):
                 widget.insert(0, first_line[rows] if rows < len(first_line) else "")
                 rows += 1
 # Crear el Combobox
-list_sheets = ttk.Combobox(FR_input)
+list_sheets = ttk.Combobox(FR_input,state="readonly")
 list_sheets.grid(row=0, column=1, sticky='w')
 list_sheets.bind("<<ComboboxSelected>>", al_seleccionar_hoja)
 table_name = Entry(FR_input)
@@ -664,11 +698,11 @@ checkbutton.grid(row=0, column=3, sticky='w')
 
 
 
-BTN_CHARGE_DATA=Button(FR_content_frame, text="Data load",bg="lightgreen",fg="black", command=lambda: save_data(name_path_file, table_name.get(), list_sheets.get(),var.get(),sufijo_name.get()))
-BTN_CHARGE_DATA.grid(row=5, column=0, sticky="e")
+BTN_CHARGE_DATA=Button(FR_input, text="Data load",bg="lightgreen",fg="black", command=lambda: save_data(name_path_file, table_name.get(), list_sheets.get(),var.get(),sufijo_name.get()))
+BTN_CHARGE_DATA.grid(row=5, column=0,columnspan=2, sticky="e")
 
-BTN_REFRESH=Button(FR_content_frame, text="Refresh", bg="lightblue", command=lambda: refrescar())
-BTN_REFRESH.grid(row=5, column=1,sticky="w")
+BTN_REFRESH=Button(FR_input, text="Refresh", bg="lightblue", command=lambda: refrescar())
+BTN_REFRESH.grid(row=5, column=2,columnspan=2,sticky="w")
 
 F_database = LabelFrame(F_main,text="Database")
 F_database.pack(side=RIGHT,fill=BOTH)
@@ -796,20 +830,11 @@ TREE_item = ttk.Treeview(frm_response_iten, columns=("item", "Rows"), show="head
 TREE_item.heading("item", text="Item")
 TREE_item.heading("Rows", text="Rows")
 
-
-def obtener_tamano():
-    # Obtener el ancho y alto del Frame
+def on_resize(event):
     ancho = root.winfo_width()
-    # alto = root.winfo_height()
-    
-    TREE_item.column("item", width=int(int(ancho)*0.05), anchor="w")
-    TREE_item.column("Rows", width=int(ancho)-int(int(ancho)*0.05), anchor="w")
-    root.after(1000, obtener_tamano)
-
-    # return ancho,alto
-
-# Llamar a la función después de un breve retraso para asegurar que el Frame haya sido renderizado
-root.after(1000, obtener_tamano)
+    TREE_item.column("item", width=int(ancho * 0.05), anchor="w")
+    TREE_item.column("Rows", width=int(ancho * 0.95), anchor="w")
+root.bind("<Configure>", on_resize)
 
 # Definir colores con tags
 # TREE_item.tag_configure("padre", background="#ffcccc")   # Rojo claro
