@@ -1,0 +1,172 @@
+Al registrar doc origen cabecera y líneas:
+	se registran datos en gcompedh y gcompedl
+		gcompedh inicia:
+			errcab = 0
+			imptot = 0
+			user_updated = admsia
+			wkfcab: null
+		gcompedl inicia:
+			estlin = E
+			errlin = 25103
+			wkflin = 1
+	Se registra en el maestro de articulos
+		garticul			
+Al autorizar las líneas de gcompedl(El movimiento de entrada queda en stand by y se culmina al generar el acta de recepcion):
+	gcompedh : 
+		errcab:25101
+		imptot: gcompedl.impnet
+		wkfcab:1
+	gcompedl:
+		estlin: E -> V
+		errlin:25103 -> 0
+		wkflin:1 -> null
+
+	Se registra 1 Orden de recepcion:
+		wms_inbound_order_head.order_number
+		wms_inbound_order_line.ordl_seqno
+
+	Se registra un movimiento de entrada
+		wms_inbound_stkmov_head:
+			mov_number	: código el movimiento
+			order_number: código el movimiento
+			mov_status	: E
+			order_number : wms_inbound_order_head.order_number
+		wms_inbound_stkmov_line:
+			linm_cuenta	: PUBI-cuenta hacia donde se mueve el stock por primera vez
+			linm_codart	: articulo
+			linm_canmov	: Stock recibido(Cantidad según unidad del movimiento)
+			linm_coduni	: Unidad de medida
+			linm_canstk	: Cantidad en la unidad de stock
+			linm_canalt	: Cantidad según unidad de medida alternativa
+			ordl_seqno : wms_inbound_order_line.ordl_seqno
+
+	Se registra 1 Movimiento de stock:
+		wms_stkmovs:
+			stkm_tabori : wms_inbound_stkmov_head -> tabla de donde proviene el movimiento
+			stkm_docori : (wms_inbound_stkmov_head.order_number) en este caso proviene del movimiento de recepcion
+			stkm_linori : wms_inbound_stkmov_line.linm_seqno
+
+	Nace en wms_inventory:
+		cuenta:	PUBI (Se define en wms_inbound_stkmov_line.linm_cuenta)
+		inv_codubi : zona de trabajo(1000) - Se define en wms_inbound_stkmov_line.linm_cuenta
+		inv_status : A activo
+
+Al Generar el acta de recepción:
+	Se actualiza la orden de recepcion: wms_inbound_order_head
+		order_status : P -> T
+	Se actualiza la linea de la orden de recepcion wms_inbound_order_line
+		ordl_status: P -> C
+	Se actualiza el movimiento de entrada: wms_inbound_stkmov_head
+		mov_status : E -> T
+
+	Se registra gcommovh y gcommovl (Acta de recepción tipo 10):
+
+	Se actualiza gcompedh:
+		estcab : E -> V
+		errcab : 25101 -> 0
+		wkfcab : 1 -> null
+
+Al 'Envasar y ubicar' Despues de recepcionar:
+		
+		Se actualiza wms_inbound_stkmov_line:
+			linm_loc_qty: 0 > 750 (Ubicado)
+		
+		Se genera un Movimiento interno (Picking)
+			wms_inhouse_stkmov_head:
+			wms_inhouse_stkmov_line: 
+				linm_ctaori: Cuenta origen
+				linm_ctades: cuenta destino
+				linm_canmov: Stock en movimiento
+				linm_canalt: peso en movimiento
+				linm_ubiori: ubicacion origen
+				linm_ubides: ubicacion destino
+				linm_linori: linm_seqno del movimiento de entrada(Linea) wms_inbound_stkmov_line.linm_seqno
+				linm_tabori: tabla origen del movimiento (wms_inbound_stkmov_head - Movimiento de entrada) 
+		
+		Se crea una tarea de linea del picking(una tarea por cada linea de picking)
+			wms_tasks:
+				task_type  : UBIC
+				task_ctaori: cuenta origen
+				task_ctades: cuenta destino
+				task_canmov: stock en movimiento
+				task_canalt: peso en movimiento
+				task_ubiori: ubicacion origen
+				task_ubides: ubicacion destino
+				task_status: estado de la tarea(4)
+				task_tabori: tabla origen del movimiento(linea de Picking: wms_inhouse_stkmov_line)
+				linm_seqno : wms_inhouse_stkmov_line.linm_seqno
+
+		Se crean 2 registros(movimientos) 1 de partida y otra de llegada del stock en wms_stkmovs por cada linea de picking wms_inhouse_stkmov_line.linm_seqno
+			primer registro wms_stkmovs(donde termina el stock):
+				stkm_tabori: tabla origen del movimiento (wms_inhouse_stkmov_head-Picking)
+				stkm_docori: Documento origen del movimiento picking : wms_inhouse_stkmov_head.mov_number
+				stkm_linori: linea del picking
+				stkm_cuenta: Cuenta destino
+				stkm_codart: articulo
+				stkm_codubi: Ubicacion destino
+				stkm_canmov: stock en destino
+				stkm_canalt: peso en destino
+			
+			Segundo registro wms_stkmovs(de donde se quita el stock)
+				stkm_tabori: tabla origen del movimiento (wms_inhouse_stkmov_head-Picking)
+				stkm_docori: Documento origen del movimiento picking : wms_inhouse_stkmov_head.mov_number
+				stkm_linori: linea del picking
+				stkm_cuenta: Cuenta origen
+				stkm_codart: articulo
+				stkm_codubi: Ubicacion origen
+				stkm_canmov: Se resta el stock en el origen que fue a destino 
+				stkm_canalt: Se resta el peso en el origen
+		
+		
+		wms_inventory: 
+			Se inserta el nuevo registro segun el movimiento destino de wms_stkmovs
+			Se quita el stock y peso de la cuenta PUBI segun el segundo movimiento de wms_stkmovs 
+		
+Cambio de ubicacion desde 'Envasar y ubicar':
+	Se registra un Movimiento interno picking 
+		wms_inhouse_stkmov_head:
+	Se registra linea de Movimiento interno picking
+		wms_inhouse_stkmov_line
+	
+	wms_tasks
+		task_type: MVUB
+		task_ctaori: cuenta origen
+		task_ctades: cuenta destino
+		task_canmov: stock a mover
+		task_canalt: peso en movimiento
+		task_ubiori: ubicacion origen
+		task_ubides: ubicacion destino
+		task_tabori: tabla origen del movimiento (wms_inhouse_stkmov_line) 
+		task_linori: wms_inhouse_stkmov_line.linm_seqno  serial de la linea del movimiento de picking
+
+	wms_stkmovs
+		stkm_linori: wms_inhouse_stkmov_line.linm_seqno (Linea del movimiento picking)
+		stkm_tabori: tabla origen (wms_inhouse_stkmov_head -> Movimiento interno de picking)
+		stkm_docori: wms_inhouse_stkmov_head.mov_number
+
+
+
+	wms_inventory
+
+BRE-TEST-BH25-XXXXXX
+
+SELECT * FROM ctipodir;
+SELECT * FROM galmacen WHERE codigo = '974';
+SELECT * FROM wms_inbound_rules_head WHERE rule_recint = '974';
+SELECT * FROM galmreci WHERE codigo = '974';
+SELECT * FROM cper_delegac WHERE codigo = 'GDA';
+SELECT * FROM ctipodir;
+SELECT * FROM cterdire;
+SELECT * FROM gdelegac WHERE codigo = 'GDA';
+SELECT * FROM gdeparta WHERE delega = 'GDA';
+SELECT * FROM galmubic WHERE codalm = '974';
+SELECT * FROM glog_alm_subzon WHERE subz_recint='974';
+SELECT * FROM wms_task_rules_head WHERE rule_code matches'370*';
+SELECT * FROM wms_task_rules_filter WHERE  rfilt_recint = '974';
+SELECT * FROM wms_outbound_rules_head WHERE rule_code matches'974*';
+SELECT * FROM wms_outbound_rules_line WHERE rule_code matches'974*';
+SELECT * FROM wms_task_rules_line WHERE rule_code matches'974*';
+SELECT * FROM galmdele WHERE codalm = '974';
+SELECT * FROM gusergrp;
+SELECT * FROM guserdefs;
+SELECT * FROM sun_reglaubi_asignada WHERE codalm = '974';
