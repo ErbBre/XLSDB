@@ -131,9 +131,18 @@ def name_validate_sql(name):
         return True, f"[{name}] OK"
 def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file, table_name.get(), list_sheets.get(),var.get()
     # Abre el diálogo para seleccionar una carpeta
-    carpeta = filedialog.askdirectory(title="Selecciona una carpeta")
-    if not(carpeta):
-        messagebox.showwarning("Alerta", 'Debe seleccionar una carpeta para almacenar la base de datos')
+    # carpeta = filedialog.askdirectory(title="Selecciona una carpeta")
+    file_path = filedialog.asksaveasfilename(
+        title="Guardar base de datos SQLite como...",
+        defaultextension=".db",  # Extensión por defecto si el usuario no pone una
+        filetypes=[
+            ("SQLite Database (*.sqlite, *.sqlite3, *.db, *.db3, *.sdb, *.sl3)",
+            "*.sqlite *.sqlite3 *.db *.db3 *.sdb *.sl3"),
+            ("Todos los archivos", "*.*")
+        ]
+    )
+    if not(file_path):
+        messagebox.showwarning("Alerta", 'Debe seleccionar una ruta para almacenar la base de datos')
         return
     # if carpeta:
     def SQL_INSERT_DATA(list_sheet_names_ok,name_from_edittable): #name_from_edittable existe una lista con un unico elemento cuando el usuario elige solo una pestaña del libro excel
@@ -144,7 +153,8 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
             
         print("HOJAS VALIDADAS",list_sheet_names_ok)
         # Conectar a la base de datos (si no existe, se crea)
-        conexion = sqlite3.connect(f'{carpeta}/data_main.db')
+        # conexion = sqlite3.connect(f'{carpeta}/data_main.db')
+        conexion = sqlite3.connect(file_path)
         cursor = conexion.cursor()
         for sheet_item in list_sheet_names_ok:
             
