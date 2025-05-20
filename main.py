@@ -470,7 +470,8 @@ def get_file_path():
         filetypes=[("Archivos Excel", ".xls"), ("Archivos Excel", ".xlsx"), ("Todos los archivos", ".")])
     if file:
         print(f"Archivo seleccionado: {file}")
-        lbl_file_path.config(text=file)
+        lbl_file_path.delete(0, tk.END)      # Borrar todo el contenido
+        lbl_file_path.insert(0, file)  # Insertar texto desde el inicio
         name_path_file = file  # Asignación de la variable global
         open_file_excel(file)
 
@@ -584,8 +585,8 @@ F_main.pack(fill=BOTH)
 F_filter = LabelFrame(F_main, text="Filter and selection")
 F_filter.pack(fill=BOTH, expand=True,side=LEFT)
 
-lbl_file_path = Label(F_filter)
-lbl_file_path.pack()
+lbl_file_path = Entry(F_filter)
+lbl_file_path.pack(expand=True, fill=X)
 Button(F_filter, text="Open Excel file", bg="green",fg="white",font=("arial",12,"bold"), command=lambda: get_file_path()).pack()
 
 FR_input = Frame(F_filter)
