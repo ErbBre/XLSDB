@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 GCOMPEDH:
     SELECT * FROM gcompedd;
     SELECT * FROM gproveed;
@@ -79,3 +80,5 @@ SELECT * FROM galmdele WHERE codalm = '370';
 SELECT * FROM gusergrp WHERE grpcode IN ('CHA', '370');
 SELECT * FROM guserdefs WHERE grpcode IN ('CHA', '370');
 SELECT * FROM sun_reglaubi_asignada WHERE codalm = '370';
+=======
+>>>>>>> 3724e9f32a65da80a0c72b7c0f60134e0b6cb6af
