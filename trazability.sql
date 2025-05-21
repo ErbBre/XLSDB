@@ -178,20 +178,209 @@ Al presionar el el boton "Autorizar inicio de salida" del documento de salida:
 			order_number: codigo de la orden de salida
 			order_tabori: gvenpedh
 			order_docori: gvenpedh.docser
-			order_status: X
+			order_status: X Pendiente picking
 			order_complete: 1
 
 		wms_outbound_order_line: LINEAS
 			ordl_cuenta: PSAL
 			ordl_terdep: gvenpedh.docser
 			ordl_tabori: gvenpedh
-			ordl_status: X
+			ordl_status: X Pendiente picking
 			ordl_linori: gvenpedl.linid
+			ordl_cantid: stock Cantidad pedida
+			ordl_canph1: cantidad fase 1 0
+			ordl_canext: Pendiente extracción
+			ordl_canrea: Cantidad extraída 0
+			ordl_reaph1: extraido fase 1
+			ordl_canpack: cantidad embalada 0
+			ordl_canser: cantidad servida 0
+			ordl_return_qty: Cantidad abonada 0
+			ordl_tabori: tabla Origen de la orden de salida en este caso gvenpedh
+			ordl_factor: Factor 1
+			ordl_complete_line: 1
 
-	Se genera un movimiento interno (Picking)
-		wms_inhouse_stkmov_head:
+	Se genera 2 movimientos internos
+		
+		UPEN a PSAL(Generacion de lote) esto se concluye y se deja la linea en estado terminado T
 			
+			wms_inhouse_stkmov_head:
+				mov_status: 
+				mov_type: 43(Generacion de lote)
+				mov_number: codigo de movimiento
+				mov_tabori: gvenpedh
+				mov_docori: codigo de lote o documento de salida(gvenpedh.docser)
+				mov_emp_code: no tiene
 
+			wms_inhouse_stkmov_line:
+				mov_seqno: wms_inhouse_stkmov_head.mov_seqno
+				linm_ctaori: cuenta origen
+				linm_ctades: cuenta destino
+				linm_ubiori: ubicacion origen
+				linm_ubides: ubicacion destino igual que el origen
+				linm_status: T (terminado)
+				linm_emp_code: tiene usuario que le dio click al boton de autorizar inicio de salida
+				linm_dateini: tiene fecha
+				linm_daterea: tiene fecha
+
+				Se genera un movimiento con 2 registros wms_stkmovs de UPEN A PSAL: (wms_stkmovs tiene 2 registros, el primero es el destino y el segundo el origen de donde se toman lo datos)
+					Primer registro DESTINO:
+						stkm_docori: wms_inhouse_stkmov_head.mov_number
+						stkm_tabori: wms_inhouse_stkmov_head (Picking movimiento interno)
+						stkm_cuenta: cuenta destino en este caso PSAL
+						stkm_codubi: ubicacion destino en este caso el mismo 2002
+						stkm_canmov: stock en destino (positivo)
+						stkm_canalt: peso en destino (positivo)
+					Segundo registro:
+						stkm_docori: wms_inhouse_stkmov_head.mov_number
+						stkm_tabori: wms_inhouse_stkmov_head (Picking movimiento interno)
+						stkm_cuenta: cuenta origen UPEN
+						stkm_codubi: ubicacion origen en este caso el mismo 2002
+						stkm_canmov: stock de origen (negativo porque se resta el stock que ya esta en detino)
+						stkm_canalt: peso de origen (negativo por que se resta el stock que ya esta en destino)
+
+
+		PSAL a DISP (Picking)
+			wms_inhouse_stkmov_head:
+				mov_type: 43 tipo Picking
+				mov_number: Codigo del movimiento
+				mov_tabori: wms_outbound_order_head
+				mov_docori: wms_outbound_order_head.order_number (Orden de salida)
+				mov_status: E
+			wms_inhouse_stkmov_line:
+				linm_ctaori: cuenta origen PSAL
+				linm_ctades: cuenta destino DISP
+				linm_canpro: cantidad propuesta para salida(es el stock del articulo en lote)
+				linm_canmov: No tiene
+				linc_terdep: tiene codigo del documento de salida (gvenpedh.docser)
+				linm_ubiori: ubicacion origen
+				linm_ubides: ubicacion destino zona 1000
+				linm_status: E (Pendiente - picking iniciado)
+				linm_tabori: wms_outbound_order_head tabla de orden de salida
+				linm_linori: id de la linea de la orden de salida wms_outbound_order_line.ordl_seqno
+				linm_emp_code: no tiene
+				linm_dateini: no tiene
+				linm_daterea: no tiene
+
+				*Aun no se genera el movimiento de picking que pasara de PSAL a DISP*
+					Pero quedan 2 tarea pendiente en wms_tasks el primero con tipo de operacion 3 Transaccion y el segundo con tipo de operacion 9 Bajar articulo, ambas tareas pertenecen a la misma linea de movimiento:
+					Primer registro:
+						task_type: PVUB
+						task_ctaori: cuenta origen PSAL
+						task_ctades: cuenta destino DISP
+						task_canmov: Cantidad diferente de cero
+						task_canalt: null
+						task_ubiori: ubicaicon origen 2002
+						task_ubides: ubicacion destino 1000
+						task_terdep: codigo de documento de salida gvenpedh.docser
+						task_emp_code: null
+						task_ope_type: 9
+						task_status: 1 Pendiente
+						task_reference: codigo de documento de salida
+						task_tabori: origen de la tarea en este caso wms_inhouse_stkmov_line linea de movimiento de picking
+						task_docori: wms_inhouse_stkmov_head.mov_number
+						task_linori: wms_inhouse_stkmov_line.linm_seqno
+					Segundo registro:
+						task_type: PMVB
+						task_ctaori: PSAL
+						task_ctades: PSAL
+						task_canmov: cantidad diferente de cero
+						task_canalt: null
+						task_ubiori: 1000
+						task_ubides: 1000
+						task_terdep: Documento de salida
+						task_emp_code: null
+						task_ope_type: 3
+						task_status: 0 En espera
+						task_reference: codigo de documento de salida
+						task_tabori: tabla origen  de la tarea en este caso del movimiento wms_inhouse_stkmov_line
+						task_docori: wms_inhouse_stkmov_head.mov_number
+						task_linori: wms_inhouse_stkmov_line.linm_seqno
+
+	Se genera una orden de recuento OINS
+		wms_count_order_head:
+			count_type: OINS
+			count_number: codigo de la orden de recuento
+			count_status: 3 Cerrado
+			req_number: No tiene peticion porque es una orden de recuento interna para que el stock nazca con lote
+
+		wms_count_order_line: (Genera 2 lineas con orden de ejecucion 1 y 2)
+			Primera linea: se resta stock y peso (practicamente se mata el articulo)
+				linc_ordexe:1
+				linc_codubi: ubicacion del articulo
+				linc_cuenta: cuenta actual PSAL
+				linc_terdep: no tiene
+				linc_stkact: stock actual en la ubicacion y cuenta
+				linc_stkaux: peso actual en la ubicacion y cuenta
+				linc_canrec: cantidad a la que fue recontada, en este caso a cero 0
+				linc_altrec: Peso a la que fue recontado, en este caso a cero 0
+				linc_ini_stkact: Stock inicial antes de recontar
+				linc_ini_stkaux: Peso inicial antes de recuento
+				linc_status: 4 Procesada con ajuste
+			Segunda linea en orden de ejecucion (practicamente se vuelve a revivir el stock pero ahora comprometido con un lote)
+				linc_ordexe: 2
+				linc_codubi: ubicacion en este caso igual que el anterior
+				linc_cuenta: cuenta igual que el anterior para este caso
+				linc_terdep: Codigo de lote gvenpedh.docser
+				linc_stkact: Stock 0 porque en la anterior linea se reconto a cero
+				linc_stkaux: Peso cero porque en la anterior linea se reconto a cero
+				linc_canrec: Cantidad recontada, en este caso con el stock que habia, entonces se revive el stock ahora en lote
+				linc_altrec: Peso recontado con el mismo que tenia, entonces se revive el peso que tenia antes del primer recuento OINS
+				linc_ini_stkact: Stock inicial en este caso cero porque se mato el stock en el recuento anterior
+				linc_ini_stkaux: Peso cero en este caso porque en el anterior recuento se reconto a cero y asi se encontro para este recuento
+				linc_status: 4 Procesada con ajuste
+
+			
+			Se crean 2 Movimientos de recuento de stock en wms_stkcount una para cada linea de wms_count_order_line (Lineas de la orden de recuento)
+				Primera Linea:
+					linc_seqno: wms_count_order_line.linc_seqno
+					count_number: wms_count_order_head.count_number
+					linc_cuenta: PSAL
+					inv_terdep: no tiene
+					inv_codubi: ubicacion actual
+					inv_canmov: Cantidad de stock 0
+					inv_stkact: stock actual difente a cero
+					inv_canalt: 0
+					inv_stkaux: stock auxiliar diferente a cero
+
+				Segundo registro:
+					linc_seqno: wms_count_order_line.linc_seqno
+					count_number: wms_count_order_head.count_number
+					inv_cuenta: PSAL 
+					inv_terdep: Codigo de documento de salida
+					inv_codubi: Misma ubicacion 2002
+					inv_canmov: cantidad de stock diferente a cero
+					inv_stkact: Stock actual
+					inv_canalt: peso diferente a cero
+					inv_stkaux: peso auxiliar cero
+
+	Se muestra la distribucion de stock en wms_inventory:
+		UPEN -> PSAL stock y peso 0
+		PSAL: Stock y peso en la misma ubicacion con inv_terdep y inv_stksal = el stock que se encuentra con tarea de movimiento de picking por completar ya que hay una tarea pendiente y otra en espera
+		DISP: tiene terdep en la ubicacion 1000 sin stock ni peso pero con inv_stkent que es el stock que se encuentra pendiente de completar el movimiento de picking
+
+
+Al cambiar el representante:
+	se actualiza gvenpedh:
+		auxchr3: de nulo a 4
+		auxchr4: de nulo a numeor de ruc del representante
+
+Al finalizar picking
+	Actualizacion en la orden de salida wms_outbound_order_head:
+		order_first_launch: con fecha a sin fecha
+		order_status: X -> L
+	Actualizacion de la linea de la orden de salida wms_outbound_order_line
+		ordl_canext: con stock a  0
+		ordl_canrea: de 0 stock que habia en el campo ordl_canext
+		ordl_status: X -> L
+
+	Actualizacion de la cabecera de la orden del picking wms_inhouse_stkmov_head:
+		mov_status: E -> D
+
+		Nuevo registro:
+			mov_number: codigo de picking
+			mov_status: T
+	Actualizacion de la linea de picking: wms_inhouse_stkmov_line:
+		
 
 BRE-TEST-BH25-XXXXXX
 
