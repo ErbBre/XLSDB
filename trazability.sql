@@ -139,14 +139,59 @@ Cambio de ubicacion desde 'Envasar y ubicar':
 		task_tabori: tabla origen del movimiento (wms_inhouse_stkmov_line) 
 		task_linori: wms_inhouse_stkmov_line.linm_seqno  serial de la linea del movimiento de picking
 
-	wms_stkmovs
-		stkm_linori: wms_inhouse_stkmov_line.linm_seqno (Linea del movimiento picking)
+	wms_stkmovs(Se insertan 2 registros el primer registro es el destino y el segundo registro es el origen)
 		stkm_tabori: tabla origen (wms_inhouse_stkmov_head -> Movimiento interno de picking)
+		stkm_linori: wms_inhouse_stkmov_line.linm_seqno (Linea del movimiento picking)
 		stkm_docori: wms_inhouse_stkmov_head.mov_number
+		
+		stkm_cuenta: cuenta destino para el primer registro y origen para el segundo
+		stkm_codubi: ubicacion destino para el primer registro y origen para el segundo
+		stkm_canmov: stock positivo para el primer registro ya que es el destino y -Stock para el segundo por ser el origen de donde se extraen
+		stkm_canalt: peso destino para el primer registro y peso negativo para el segundo registro ya que es el origen de donde se extrae
+
+	wms_inventory: Se crea nuevo registro con los datos del destino
 
 
+Al crear un documento de salida de tipo devolucion desde el menu del salida
+	Se crea 
+		gvenpedh:
+			impres: N
+			estcab: E
+			errcab: 25450
+			wkfcab: 1
+			docser: codigo del documento de salida
+			docori: gcompedh.docser
+			auxnum2: gcompedh.refter
+		
+		gvenpedl:
+			estlin: V
+			errlin: 0
+			indmod: S
+			auxchr3: Estado del articulo en este caso NUEVO / BUENO
+			auxchr1: Situacion legal en este caso abandono
 
-	wms_inventory
+
+Al presionar el el boton "Autorizar inicio de salida" del documento de salida:
+	Se genera una orden de salida: 
+		wms_outbound_order_head: CABECERA DE LA ORDEN DE SALIDA
+			order_type: tipo de salida
+			order_number: codigo de la orden de salida
+			order_tabori: gvenpedh
+			order_docori: gvenpedh.docser
+			order_status: X
+			order_complete: 1
+
+		wms_outbound_order_line: LINEAS
+			ordl_cuenta: PSAL
+			ordl_terdep: gvenpedh.docser
+			ordl_tabori: gvenpedh
+			ordl_status: X
+			ordl_linori: gvenpedl.linid
+
+	Se genera un movimiento interno (Picking)
+		wms_inhouse_stkmov_head:
+			
+
 
 BRE-TEST-BH25-XXXXXX
 
