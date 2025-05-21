@@ -136,7 +136,7 @@ def save_data(file_path, t_name, sheet_name, all_tabs, sufijo): #name_path_file,
         title="Guardar base de datos SQLite como...",
         defaultextension=".db",  # Extensión por defecto si el usuario no pone una
         filetypes=[
-            ("SQLite Database (*.sqlite, *.sqlite3, *.db, *.db3, *.sdb, *.sl3)",
+            ("SQLite Database (*.db, *.sqlite, *.sqlite3, *.db3, *.sdb, *.sl3)",
             "*.sqlite *.sqlite3 *.db *.db3 *.sdb *.sl3"),
             ("Todos los archivos", "*.*")
         ]
