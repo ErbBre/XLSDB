@@ -370,17 +370,118 @@ Al finalizar picking
 		order_status: X -> L
 	Actualizacion de la linea de la orden de salida wms_outbound_order_line
 		ordl_canext: con stock a  0
-		ordl_canrea: de 0 stock que habia en el campo ordl_canext
+		ordl_canrea: pasa de stock 0 a tener el contenido de ordl_canext
 		ordl_status: X -> L
 
 	Actualizacion de la cabecera de la orden del picking wms_inhouse_stkmov_head:
 		mov_status: E -> D
 
-		Nuevo registro:
-			mov_number: codigo de picking
-			mov_status: T
+	Nuevo registro wms_inhouse_stkmov_head:
+		mov_number: codigo de picking
+		mov_status: T
+		mov_tabori: no tiene
+		mov_docori: no tiene
+		mov_zonlog: no tiene
+		mov_subzon: no tiene
+		mov_status: T
+		mov_emp_code: usuario de sesion xsql
+		user_created y updated: admsia
+
+		Nuevo movimiento de stock en wms_stkmovs con 2 registros:
+			Primer registro Destino:
+				stkm_tabori: wms_inhouse_stkmov_head
+				stkm_docori: wms_inhouse_stkmov_head.mov_number (Padre)
+				stkm_cuenta: PSAL
+				stkm_terdep: Documento de salida 
+				stkm_codubi: Ubicacion destino que se pone en el field al finalizar picking
+				stkm_canmov: positivo porque es el destino
+				stkm_canalt: positivo porque es el destino del stock
+			Segundo registro Origen:
+				stkm_tabori: wms_inhouse_stkmov_head
+				stkm_docori: wms_inhouse_stkmov_head.mov_number (Padre)
+				stkm_cuenta: PSAL
+				stkm_terdep: Documento de salida 
+				stkm_codubi: Ubicacion 2002 el anterior
+				stkm_canmov: negativo porque es el destino
+				stkm_canalt: negativo porque es el destino del stock
+
+				
 	Actualizacion de la linea de picking: wms_inhouse_stkmov_line:
+		linm_canmov: ya tiene stock
+		linm_ubiori: 1099
+		linm_ubides: 1099
+		linm_status: D
+		linm_ctaori:PSAL
+		linm_ctades:DISP
+		linm_tabori: wms_outbound_order_head
+		linm_linori: wms_outbound_order_line.ordl_seqno
 		
+		Actualizacion de Tarea wms_tasks
+			task_linori:wms_inhouse_stkmov_line.linm_seqno (Para ambas tareas)
+
+			Primera tarea:
+				task_type:PVUB
+				task_ubides: 1099 ubicacion en field de finalizar picking
+				task_emp_code: se completa
+				task_start: se completa
+				task_end: se completa
+				task_status: 4 Cerrado
+				task_ope_type:9
+				task_reference: Documento de salida
+				task_tabori:wms_inhouse_stkmov_line
+				task_docori: wms_inhouse_stkmov_head.mov_number
+			Segundo registro:
+				task_type:PMVB
+				task_ubiori: 1099 ubicacion desde el field de finalizar picking
+				task_ubides: misma ubicacion del field
+				task_ope_type:3
+				task_start: se completa
+				task_end: se completa
+				task_status: 4 Cerrado
+				task_reference: Documento de salida
+				task_tabori:wms_inhouse_stkmov_line
+				task_docori: wms_inhouse_stkmov_head.mov_number
+
+		Nuevo movimiento de stock en wms_stkmovs con 2 registros uno para cada tarea:
+			Primer registro Destino:
+				stkm_linori:wms_inhouse_stkmov_line.linm_seqno
+				stkm_tabori: wms_inhouse_stkmov_head
+				stkm_docori: wms_inhouse_stkmov_head.mov_number (Padre)
+				stkm_cuenta: PSAL
+				stkm_terdep: Documento de salida 
+				stkm_codubi: Ubicacion destino que se pone en el field al finalizar picking
+				stkm_canmov: positivo porque es el destino
+				stkm_canalt: positivo porque es el destino del stock
+				stkm_docori: wms_inhouse_stkmov_head.mov_number
+			Segundo registro Origen:
+				stkm_linori:wms_inhouse_stkmov_line.linm_seqno
+				stkm_tabori: wms_inhouse_stkmov_head
+				stkm_docori: wms_inhouse_stkmov_head.mov_number (Padre)
+				stkm_cuenta: PSAL
+				stkm_terdep: Documento de salida 
+				stkm_codubi: Ubicacion 2002 el anterior
+				stkm_canmov: negativo porque es el destino
+				stkm_canalt: negativo porque es el destino del stock
+				stkm_docori: wms_inhouse_stkmov_head.mov_number
+
+	Nuevo registro en linea de picking: wms_inhouse_stkmov_line
+		mov_seqno: wms_inhouse_stkmov_head.mov_seqno
+		linm_ctaori: PSAL
+		linm_ctades: PSAL
+		linm_canpro: null
+		linm_canmov:contiene stock
+		linm_terdep: gvenpedh.docser - documento de salida
+		linm_canalt: peso
+		linm_ubiori: 2002
+		linm_ubides: 1099 zona de trabajo
+		linm_status: T
+		linm_tabori: no tiene
+		linm_linori: not tiene
+	
+	wms_inventory (Como termina el stock):
+		inv_cuenta: DISP
+		inv_terdep: Documento de salida
+
 
 BRE-TEST-BH25-XXXXXX
 
