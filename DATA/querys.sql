@@ -96,7 +96,7 @@ from systables
 WHERE 
 		systables.nrows > 0 
 	AND syscolumns.colname like '%codart%' 
-	AND systables.tabname NOT like '%_v%'
+	AND systables.tabname NOT LIKE '%\_v%' ESCAPE '\'
 	AND systables.tabname NOT IN (
 		't_result_07648',
 		'sun_migra_ubicado_ilo',
@@ -111,3 +111,32 @@ WHERE
 	)
 	
 ORDER by systables.nrows DESC;
+
+
+===============================================================================
+--ATTACH DATABASE '/Users/christianruizovalle/desktop/project/xlsx/xlsdb/data/data_main.db' AS system;
+
+-- TABLAS CON CAMPOS CODART
+
+select 
+	head.tabname,line.colname, 'SELECT * FROM '||head.tabname||';' query,  head.nrows
+from system.systables head 
+	join system.syscolumns line
+		on head.tabid = line.tabid  
+WHERE 
+		head.nrows > 0 
+	AND line.colname like '%codart%' 
+	AND head.tabname NOT LIKE '%\_v%' ESCAPE '\'
+	AND head.tabname NOT IN (
+		't_result_07648',
+		'sun_migra_ubicado_ilo',
+		'sun_migra_ubicado_lalibertad',
+		'usr_retro_mollendo',
+		'sun_sitleg_tumbes',
+		'sun_garticul_imei',
+		'sun_datos_cambio_sitleg',
+		'sun_gcompedl_desagr',
+		'galmtipc',
+		'wms_inventory2'
+	)
+ORDER by head.nrows DESC;
