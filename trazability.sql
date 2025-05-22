@@ -11,6 +11,7 @@ Al registrar doc origen cabecera y líneas:
 			wkflin = 1
 	Se registra en el maestro de articulos
 		garticul			
+			auxchr4: gcompedh.auxchr2
 Al autorizar las líneas de gcompedl(El movimiento de entrada queda en stand by y se culmina al generar el acta de recepcion):
 	gcompedh : 
 		errcab:25101
@@ -241,7 +242,7 @@ Al presionar el el boton "Autorizar inicio de salida" del documento de salida:
 
 		PSAL a DISP (Picking)
 			wms_inhouse_stkmov_head:
-				mov_type: 43 tipo Picking
+				mov_type: 46 tipo Picking
 				mov_number: Codigo del movimiento
 				mov_tabori: wms_outbound_order_head
 				mov_docori: wms_outbound_order_head.order_number (Orden de salida)
@@ -481,6 +482,70 @@ Al finalizar picking
 	wms_inventory (Como termina el stock):
 		inv_cuenta: DISP
 		inv_terdep: Documento de salida
+
+====================================================================================================================================================================================
+	Generar Acta de entrega(desde el boton Picking salida entrega ) sin volver a generar documento de picking 
+		Actualizacion de orden de salida:wms_outbound_order_head
+			order_status: L -> S
+		Actualizacion de linea de orden de salida: wms_outbound_order_line
+			ordl_canser: stock
+			ordl_status: L -> S
+		
+		Movimiento de salida: wms_outbound_stkmov_head
+			mov_type: 26
+			mov_number: codigo de movimiento de salida
+			mov_number:Orden de salida wms_outbound_order_head.order_number
+			order_number:Orden de salida wms_outbound_order_head.order_number
+			mov_status: E
+
+			Lineas de movimiento de salida:	wms_outbound_stkmov_line
+				linm_cuenta: DISP
+				linm_canmov: Stock
+				linm_terdep: Documento de salida
+				linm_canalt: Peso
+				linm_codubi: Ubicacion que se pone en el field
+				ordl_seqno: wms_outbound_order_line.ordl_seqno
+				linm_status: T
+		Se genera Documento de entrega o acta de entrega:
+			gvenmovh
+				tipdoc: 31
+				docser: codigo de acta de entrega
+				impres: N
+				estcab: V
+				direnv: 39
+				dirfac:39
+				portes: D
+				valstk: N
+				indmod: S
+				auxchr1:4
+				docori: Documento de salida
+				auxchr2: gcompedh.auxchr2
+				auxchr4:gvenpedh.auxchr4
+				auxnum1:wms_outbound_stkmov_head.mov_seqno
+
+			gvenmovl:
+				canmov: Stock
+				canalt: Peso
+				impnet: Importe neto
+				linori:gvenpedl.linid
+				lindes:wms_outbound_stkmov_line.linm_seqno
+				indmod:S
+				regalo:N
+				auxchr1:01
+				auxchr3:10
+
+		Historico de DISPOSICION sun_hist_disposicion
+			docser: gcompedh.refter
+			ctaori: DISP
+			ctades: NSAL
+			stkact:stock
+			cantid: stock
+			stkaux: peso
+			peso: peso
+			valor: gcompedl.precio
+		
+		wms_inventory:
+			Se quita el stock y peso DISP
 
 
 BRE-TEST-BH25-XXXXXX

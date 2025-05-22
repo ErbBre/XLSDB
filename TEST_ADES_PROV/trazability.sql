@@ -1,0 +1,3 @@
+Numero Acta: BRE-ADES-0001-XXXXXX
+articulo: 0000000221668
+
