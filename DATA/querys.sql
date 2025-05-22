@@ -83,3 +83,31 @@ SELECT * FROM tmp_codart_upen
 
 -- VERIFICACION DE ACTAS PARA EL ARTICULO UPEN DEL LOTE 1
 SELECT * FROM gcommovh_lts9may head JOIN gcommovl_lts9may line ON head.cabid = line.cabid WHERE line.codart = '9988013021967'
+
+
+
+
+-- TABLAS CON CAMPOS CODART
+select 
+	tabname,syscolumns.colname, 'SELECT * FROM '||tabname||';' query,  systables.nrows
+from systables 
+	join syscolumns 
+		on systables.tabid = syscolumns.tabid  
+WHERE 
+		systables.nrows > 0 
+	AND syscolumns.colname like '%codart%' 
+	AND systables.tabname NOT like '%_v%'
+	AND systables.tabname NOT IN (
+		't_result_07648',
+		'sun_migra_ubicado_ilo',
+		'sun_migra_ubicado_lalibertad',
+		'usr_retro_mollendo',
+		'sun_sitleg_tumbes',
+		'sun_garticul_imei',
+		'sun_datos_cambio_sitleg',
+		'sun_gcompedl_desagr',
+		
+		'galmtipc'
+	)
+	
+ORDER by systables.nrows DESC;
