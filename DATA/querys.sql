@@ -140,3 +140,35 @@ WHERE
 		'wms_inventory2'
 	)
 ORDER by head.nrows DESC;
+
+
+
+
+
+
+
+
+
+1	wms_count_adjusts	AJUSTES RECUENTOS
+2	wms_count_cycle_gen_orders	GENERAR ÓRDENES DE RECUENTOS CÍCLICOS
+3	wms_count_diff_justify	JUSTIFICACIÓN AJUSTES RECUENTOS
+4	wms_count_diff_justify_rep	JUSTIFICACIÓN AJUSTES RECUENTOS
+5	wms_count_order_2	PETICIONES POR ALMACEN - RESUMEN
+6	wms_count_order_codalm	PETICIONES POR ALMACEN
+7	wms_count_order_codart	RECUENTOS POR ARTÍCULO
+8	wms_count_order_codfam	RECUENTOS POR FAMÍLIA DE ARTÍCULO
+9	wms_count_order_overlapping	RECUENTOS DE STOCKS SOLAPADOS
+10	wms_stkcount	MOVIMIENTOS DE RECUENTO DE STOCK
+
+
+
+wms_count_request_head			Peticiones de recuento
+wms_count_order_head_sqltsel	Entrada rápida de recuentos
+wms_tasks						Tareas
+wms_count_order_line			Líneas
+wms_count_order_hu_line			Líneas UM
+wms_count_order_wkf_status		Estados workflow
+wms_workflow_log				Logs workflow
+wms_stkcount					Ajustes de stock
+sun_count_order_aux	
+sun_count_order_stage_sel
